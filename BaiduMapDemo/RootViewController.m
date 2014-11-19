@@ -31,16 +31,22 @@
   
   // 功能3：公交检索
   BMKPlanNode *startNode = [[BMKPlanNode alloc] init];
-  startNode.name = @"传媒大学";
+  startNode.name = @"梆子井";
   startNode.cityName = @"北京";
   
   BMKPlanNode *endNode = [[BMKPlanNode alloc] init];
-  endNode.name = @"四惠";
+  endNode.name = @"金长安大厦";
   endNode.cityName = @"北京";
   
-  // 少换乘
+  // 功能3：公交检索
   [[HYBBaiduMapHelper shared] transitRouteSearchFrom:startNode to:endNode city:@"北京" transitPolicy:BMK_TRANSIT_TRANSFER_FIRST completion:^(BMKTransitRouteResult *result) {
-    
+    // 功能4：驾乘检索
+    [[HYBBaiduMapHelper shared] driveRouteSearchFrom:startNode to:endNode drivePolicy:BMK_DRIVING_TIME_FIRST  completion:^(BMKTransitRouteResult *result) {
+      // 功能5：步行检索
+      [[HYBBaiduMapHelper shared] walkRouteSearchFrom:startNode to:endNode completion:^(BMKTransitRouteResult *result) {
+        ;
+      }];
+    }];
   }];
   return;
 }

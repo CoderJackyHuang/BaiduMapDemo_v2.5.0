@@ -154,6 +154,60 @@ BMKRouteSearchDelegate> {
   return;
 }
 
+/// 驾乘检索方法
+/// 前两个参数，分别表示起点和终点的位置名称
+- (void)driveRouteSearchFrom:(BMKPlanNode *)startNode
+                          to:(BMKPlanNode *)endNode
+                 drivePolicy:(BMKDrivingPolicy)drivePolicy
+                  completion:(HYBRouteSearchCompletion)completion {
+  _routeSearchCompletion = [completion copy];
+  
+  if (_routeSearch == nil) {
+    _routeSearch = [[BMKRouteSearch alloc] init];
+  }
+  
+  _routeSearch.delegate = self;
+  
+  // 公交检索
+  BMKDrivingRoutePlanOption *driveRoutePlan = [[BMKDrivingRoutePlanOption alloc] init];
+  driveRoutePlan.from = startNode;
+  driveRoutePlan.to = endNode;
+  driveRoutePlan.drivingPolicy = drivePolicy;
+  
+  if ([_routeSearch drivingSearch:driveRoutePlan]) {
+    NSLog(@"drive 检索发送成功");
+  } else {
+    NSLog(@"drive 检索发送失败");
+  }
+  return;
+}
+
+/// 步行检索方法
+/// 前两个参数，分别表示起点和终点的位置名称
+- (void)walkRouteSearchFrom:(BMKPlanNode *)startNode
+                         to:(BMKPlanNode *)endNode
+                 completion:(HYBRouteSearchCompletion)completion {
+  _routeSearchCompletion = [completion copy];
+  
+  if (_routeSearch == nil) {
+    _routeSearch = [[BMKRouteSearch alloc] init];
+  }
+  
+  _routeSearch.delegate = self;
+  
+  // 公交检索
+  BMKWalkingRoutePlanOption *walkRoutePlan = [[BMKWalkingRoutePlanOption alloc] init];
+  walkRoutePlan.from = startNode;
+  walkRoutePlan.to = endNode;
+  
+  if ([_routeSearch walkingSearch:walkRoutePlan]) {
+    NSLog(@"walk 检索发送成功");
+  } else {
+    NSLog(@"walk 检索发送失败");
+  }
+  return;
+}
+
 #pragma mark - BMKGeneralDelegate
 - (void)onGetNetworkState:(int)iError {
   if (0 == iError) {
@@ -256,6 +310,17 @@ BMKRouteSearchDelegate> {
                step.vehicleInfo.zonePrice]);
       }
     }
+    
+    // 打车信息
+    NSLog(@"打车信息------------------------------------------");
+    NSLog(@"路线打车描述信息:%@  总路程: %d米    总耗时：约%f分钟  每千米单价：%f元  全程总价：约%d元",
+          result.taxiInfo.desc,
+          result.taxiInfo.distance,
+          result.taxiInfo.duration / 60.0,
+          result.taxiInfo.perKMPrice,
+          result.taxiInfo.totalPrice);
+    
+    
   } else if (error == BMK_SEARCH_AMBIGUOUS_ROURE_ADDR) { // 检索地址有岐义，可获取推荐地址
     // 获取建议检索起终点
     NSLog(@"无检索结果，返回了建议检索信息");
@@ -271,6 +336,105 @@ BMKRouteSearchDelegate> {
     }
   } else {
     NSLog(@"无公交检索结果 ");
+  }
+  
+  
+  // 回调block根据实际需要返回，可修改返回结构
+  if (_routeSearchCompletion) {
+    _routeSearchCompletion(nil); // 这里只是返回空，这个需要根据实际需要返回
+  }
+  return;
+}
+
+- (void)onGetDrivingRouteResult:(BMKRouteSearch *)searcher
+                         result:(BMKDrivingRouteResult *)result
+                      errorCode:(BMKSearchErrorCode)error {
+  if (error == BMK_SEARCH_NO_ERROR) { // 检索成功的处理
+    for (BMKDrivingRouteLine *line in result.routes) {
+      NSLog(@"-----------------------------------------------------");
+      NSLog(@"  时间：%2d %2d:%2d:%2d 长度: %d米",
+            line.duration.dates,
+            line.duration.hours,
+            line.duration.minutes,
+            line.duration.seconds,
+            line.distance);
+      for (BMKDrivingStep *step in line.steps) {
+        NSLog(@"入口：%@   出口：%@   路段总体指示信息：%@    入口信息：%@    出口信息：%@  转弯数：%d",
+              step.entrace.title,
+              step.exit.title,
+              step.instruction,
+              step.entraceInstruction,
+              step.exitInstruction,
+              step.numTurns);
+      }
+    }
+  } else if (error == BMK_SEARCH_AMBIGUOUS_ROURE_ADDR) { // 检索地址有岐义，可获取推荐地址
+    // 获取建议检索起终点
+    NSLog(@"无检索结果，返回了建议检索信息");
+    
+    NSLog(@"起点推荐信息：--------------------------------");
+    for (BMKPoiInfo *info in result.suggestAddrResult.startPoiList) {
+      NSLog(@"POI名称:%@     POI地址:%@     POI所在城市:%@", info.name, info.address, info.city);
+    }
+    
+    NSLog(@"终点推荐信息：--------------------------------");
+    for (BMKPoiInfo *info in result.suggestAddrResult.endPoiList) {
+      NSLog(@"POI名称:%@     POI地址:%@     POI所在城市:%@", info.name, info.address, info.city);
+    }
+  } else {
+    NSLog(@"无公交检索结果 ");
+  }
+  
+  
+  // 回调block根据实际需要返回，可修改返回结构
+  if (_routeSearchCompletion) {
+    _routeSearchCompletion(nil); // 这里只是返回空，这个需要根据实际需要返回
+  }
+  return;
+}
+
+- (void)onGetWalkingRouteResult:(BMKRouteSearch *)searcher
+                         result:(BMKWalkingRouteResult *)result
+                      errorCode:(BMKSearchErrorCode)error {
+  if (error == BMK_SEARCH_NO_ERROR) { // 检索成功的处理
+    for (BMKDrivingRouteLine *line in result.routes) {
+      NSLog(@"步行检索结果 ：-----------------------------------------------------");
+      NSLog(@"  时间：%2d %2d:%2d:%2d 长度: %d米",
+            line.duration.dates,
+            line.duration.hours,
+            line.duration.minutes,
+            line.duration.seconds,
+            line.distance);
+      for (BMKWalkingStep *step in line.steps) {
+        NSLog(@"入口：%@   出口：%@   路段总体指示信息：%@    入口信息：%@    出口信息：%@",
+              step.entrace.title,
+              step.exit.title,
+              step.instruction,
+              step.entraceInstruction,
+              step.exitInstruction);
+      }
+    }
+  } else if (error == BMK_SEARCH_AMBIGUOUS_ROURE_ADDR) { // 检索地址有岐义，可获取推荐地址
+    // 获取建议检索起终点
+    NSLog(@"无检索结果，返回了建议检索信息");
+    
+    NSLog(@"起点推荐信息：--------------------------------");
+    for (BMKPoiInfo *info in result.suggestAddrResult.startPoiList) {
+      NSLog(@"POI名称:%@     POI地址:%@     POI所在城市:%@", info.name, info.address, info.city);
+    }
+    
+    NSLog(@"终点推荐信息：--------------------------------");
+    for (BMKPoiInfo *info in result.suggestAddrResult.endPoiList) {
+      NSLog(@"POI名称:%@     POI地址:%@     POI所在城市:%@", info.name, info.address, info.city);
+    }
+  } else {
+    NSLog(@"无公交检索结果 ");
+  }
+  
+  
+  // 回调block根据实际需要返回，可修改返回结构
+  if (_routeSearchCompletion) {
+    _routeSearchCompletion(nil); // 这里只是返回空，这个需要根据实际需要返回
   }
   return;
 }

@@ -17,7 +17,7 @@ typedef void (^HYBRouteSearchCompletion)(BMKTransitRouteResult *result);
  *
  * @author huangyibiao
  */
-@interface HYBBaiduMapHelper : NSObject 
+@interface HYBBaiduMapHelper : NSObject
 
 + (HYBBaiduMapHelper *)shared;
 
@@ -27,7 +27,9 @@ typedef void (^HYBRouteSearchCompletion)(BMKTransitRouteResult *result);
 
 ///
 /// 下面的几个方法是定位使用
-- (void)locateInView:(UIView *)mapSuerView frame:(CGRect)frame withCompletion:(HYBUserLocationCompletion)completion;
+- (void)locateInView:(UIView *)mapSuerView
+               frame:(CGRect)frame
+      withCompletion:(HYBUserLocationCompletion)completion;
 - (void)viewWillAppear;
 - (void)viewWillDisappear;
 - (void)viewDidDeallocOrReceiveMemoryWarning;
@@ -35,11 +37,12 @@ typedef void (^HYBRouteSearchCompletion)(BMKTransitRouteResult *result);
 ///
 /// 下面的方法是计算两地的距离
 /// 返回距离单位为米
-- (CLLocationDistance)distanceWithStartPoint:(CLLocationCoordinate2D)startPoint endPoint:(CLLocationCoordinate2D)endPoint;
+- (CLLocationDistance)distanceWithStartPoint:(CLLocationCoordinate2D)startPoint
+                                    endPoint:(CLLocationCoordinate2D)endPoint;
 
 ///
 /// 下面的方法是路线规划获取操作
-///
+/// 注意：不能同时调用下面的这三个方法，必须是先调用完一个，返回结果后，再继续调用别的，否则会覆盖前一个操作的数据
 
 /// 公交检索方法
 /// 前两个参数，分别表示起点和终点的位置名称
@@ -49,5 +52,18 @@ typedef void (^HYBRouteSearchCompletion)(BMKTransitRouteResult *result);
                           city:(NSString *)city
                  transitPolicy:(BMKTransitPolicy)transitPolicy
                     completion:(HYBRouteSearchCompletion)completion;
+
+/// 驾乘检索方法
+/// 前两个参数，分别表示起点和终点的位置名称
+- (void)driveRouteSearchFrom:(BMKPlanNode *)startNode
+                          to:(BMKPlanNode *)endNode
+                 drivePolicy:(BMKDrivingPolicy)drivePolicy
+                  completion:(HYBRouteSearchCompletion)completion;
+
+/// 步行检索方法
+/// 前两个参数，分别表示起点和终点的位置名称
+- (void)walkRouteSearchFrom:(BMKPlanNode *)startNode
+                         to:(BMKPlanNode *)endNode
+                 completion:(HYBRouteSearchCompletion)completion;
 
 @end
